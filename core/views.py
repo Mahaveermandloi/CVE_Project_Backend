@@ -7,6 +7,15 @@ from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from .models import CveChange
 
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
+from .models import CveChange
+import openpyxl
+
+
+
+
 # ---------------------------------------------------------
 # GLOBAL LIMIT
 # ---------------------------------------------------------
@@ -83,7 +92,8 @@ def cvechange_update(request, pk):
     change.cveId = data.get("cveId", change.cveId)
     change.eventName = data.get("eventName", change.eventName)
     change.cveChangeId = data.get("cveChangeId", change.cveChangeId)
-    change.sourceIdentifier = data.get("sourceIdentifier", change.sourceIdentifier)
+    change.sourceIdentifier = data.get(
+        "sourceIdentifier", change.sourceIdentifier)
     change.created = data.get("created", change.created)
     change.details = data.get("details", change.details)
     change.save()
@@ -185,3 +195,231 @@ def cvechange_search(request):
         "timestamp": datetime.utcnow().isoformat(),
         "data": results
     })
+
+
+# ---------------------------------------------------------
+# 8. FILTER RECORDS (by eventName and date range)
+# ---------------------------------------------------------
+@csrf_exempt
+def cvechange_filter(request):
+    """
+    Query params:
+      - event  (can appear multiple times) e.g. ?event=CVE%20Modified&event=Reanalysis
+      - startDate (YYYY-MM-DD)
+      - endDate   (YYYY-MM-DD)
+      - resultsPerPage (optional)
+      - startIndex (optional)
+    """
+
+    print("Filter API called", request.GET)
+
+    # pagination params
+    results_per_page = int(request.GET.get("resultsPerPage", MAX_LIMIT))
+    results_per_page = min(results_per_page, MAX_LIMIT)
+    start_index = int(request.GET.get("startIndex", 0))
+
+    # events (multi-select)
+    events = request.GET.getlist("event")  # ?event=a&event=b
+    # also support comma separated fallback
+    if not events:
+        events_raw = request.GET.get("events", "")
+        if events_raw:
+            events = [e.strip() for e in events_raw.split(",") if e.strip()]
+
+    # date range (ISO date yyyy-mm-dd)
+    start_date = request.GET.get("startDate")
+    end_date = request.GET.get("endDate")
+
+    queryset = CveChange.objects.all()
+
+    # event filter
+    if events:
+        queryset = queryset.filter(eventName__in=events)
+
+    # date filters - supports created as datetime field
+    # If only start_date provided -> filter exact day and above
+    # If both provided -> inclusive range
+    try:
+        if start_date:
+            # created__date >= start_date
+            queryset = queryset.filter(created__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(created__date__lte=end_date)
+    except Exception as e:
+        print("Date filter parse error:", e)
+
+    queryset = queryset.order_by("id")
+
+    total_found = queryset.count()
+
+    sliced = queryset[start_index:start_index + results_per_page]
+
+    results = [
+        {
+            "id": c.id,
+            "cveId": c.cveId,
+            "eventName": c.eventName,
+            "cveChangeId": c.cveChangeId,
+            "sourceIdentifier": c.sourceIdentifier,
+            "created": c.created,
+            "details": c.details,
+        }
+        for c in sliced
+    ]
+
+    return JsonResponse({
+        "resultsPerPage": results_per_page,
+        "startIndex": start_index,
+        "totalResults": total_found,
+        "timestamp": datetime.utcnow().isoformat(),
+        "data": results
+    })
+
+
+MAX_EXPORT_LIMIT = 5000  # Maximum records to export
+
+
+
+# ---------------------------------------------------------
+# 9. EXPORT FILTERED RECORDS TO EXCEL
+# ---------------------------------------------------------
+# @csrf_exempt
+# def cvechange_export(request):
+#     """
+#     Export filtered CVE changes to Excel.
+#     Query params:
+#       - event (multiple allowed) e.g. ?event=CVE%20Modified&event=Reanalysis
+#       - startDate (YYYY-MM-DD)
+#       - endDate   (YYYY-MM-DD)
+#     """
+
+#     MAX_EXPORT_LIMIT = 5000  # Maximum records to export
+
+#     # events filter
+#     events = request.GET.getlist("event")
+#     if not events:
+#         events_raw = request.GET.get("events", "")
+#         if events_raw:
+#             events = [e.strip() for e in events_raw.split(",") if e.strip()]
+
+#     # date range filter
+#     start_date = request.GET.get("startDate")
+#     end_date = request.GET.get("endDate")
+
+#     queryset = CveChange.objects.all()
+
+#     # Apply event filter
+#     if events:
+#         queryset = queryset.filter(eventName__in=events)
+
+#     # Apply date filters
+#     try:
+#         if start_date:
+#             queryset = queryset.filter(created__date__gte=start_date)
+#         if end_date:
+#             queryset = queryset.filter(created__date__lte=end_date)
+#     except Exception as e:
+#         print("Date filter parse error:", e)
+
+#     queryset = queryset.order_by("id")[:MAX_EXPORT_LIMIT]  # Limit export
+
+#     # Create Excel workbook
+#     wb = openpyxl.Workbook()
+#     ws = wb.active
+#     ws.title = "CVE Changes"
+
+#     # Header row
+#     headers = ["ID", "CVE ID", "Event Name", "CVE Change ID", "Source Identifier", "Created", "Details"]
+#     ws.append(headers)
+
+#     # Data rows
+#     for c in queryset:
+#         ws.append([
+#             c.id,
+#             c.cveId,
+#             c.eventName,
+#             c.cveChangeId,
+#             c.sourceIdentifier,
+#             c.created.strftime("%Y-%m-%d %H:%M:%S"),
+#             json.dumps(c.details),  # Convert JSON field to string
+#         ])
+
+#     # Prepare response
+#     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+#     filename = f"CVE_Changes_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+#     response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+#     # Save workbook to response
+#     wb.save(response)
+#     return response
+
+
+
+@csrf_exempt
+def cvechange_export(request):
+    """
+    Export filtered CVE changes to Excel.
+    Query params:
+      - event (multiple allowed) e.g. ?event=CVE%20Modified&event=Reanalysis
+      - startDate (YYYY-MM-DD)
+      - endDate   (YYYY-MM-DD)
+    """
+
+    # events filter
+    events = request.GET.getlist("event")
+    if not events:
+        events_raw = request.GET.get("events", "")
+        if events_raw:
+            events = [e.strip() for e in events_raw.split(",") if e.strip()]
+
+    # date range filter
+    start_date = request.GET.get("startDate")
+    end_date = request.GET.get("endDate")
+
+    queryset = CveChange.objects.all()
+
+    # Apply event filter
+    if events:
+        queryset = queryset.filter(eventName__in=events)
+
+    # Apply date filters
+    try:
+        if start_date:
+            queryset = queryset.filter(created__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(created__date__lte=end_date)
+    except Exception as e:
+        print("Date filter parse error:", e)
+
+    queryset = queryset.order_by("id")  # NO LIMIT
+
+    # Create Excel workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "CVE Changes"
+
+    # Header row
+    headers = ["ID", "CVE ID", "Event Name", "CVE Change ID", "Source Identifier", "Created", "Details"]
+    ws.append(headers)
+
+    # Data rows
+    for c in queryset:
+        ws.append([
+            c.id,
+            c.cveId,
+            c.eventName,
+            c.cveChangeId,
+            c.sourceIdentifier,
+            c.created.strftime("%Y-%m-%d %H:%M:%S"),
+            json.dumps(c.details),
+        ])
+
+    # Prepare response
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"CVE_Changes_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    wb.save(response)
+    return response

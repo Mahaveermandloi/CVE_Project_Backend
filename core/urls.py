@@ -28,5 +28,8 @@ urlpatterns = [
     path("api/cvechanges/delete/<int:pk>/", views.cvechange_delete),
     path("api/cvechanges/paginated/", views.cvechange_paginated),
     path("api/cvechanges/search/", views.cvechange_search),
+    path('api/cvechanges/filter/', views.cvechange_filter, name='cvechange_filter'),
+    path("api/cvechanges/export/", views.cvechange_export, name="cvechange_export"),
+    
 
 ]
