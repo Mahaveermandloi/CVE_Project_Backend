@@ -1,0 +1,92 @@
+# ─────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+*.egg-info/
+.installed.cfg
+
+# Logs
+*.log
+logs/
+debug.log
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# Django stuff
+*.pot
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+db.sqlite3-journal
+
+# Local settings / environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Django static and media
+staticfiles/
+static/
+media/
+
+# Migrations (OPTIONAL — remove if you want migrations tracked)
+**/migrations/**
+!**/migrations/__init__.py
+
+# IDE / Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pycharm
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+
+# macOS / Windows
+.DS_Store
+Thumbs.db

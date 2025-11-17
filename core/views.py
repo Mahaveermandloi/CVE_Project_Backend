@@ -1,0 +1,187 @@
+
+import json
+from datetime import datetime
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+from .models import CveChange
+
+# ---------------------------------------------------------
+# GLOBAL LIMIT
+# ---------------------------------------------------------
+MAX_LIMIT = 5000
+
+
+def limit_results(queryset):
+    """Returns only first MAX_LIMIT records"""
+    return list(queryset[:MAX_LIMIT])
+
+
+# ---------------------------------------------------------
+# 1. LIST ALL RECORDS (LIMITED TO 5000)
+# ---------------------------------------------------------
+def cvechange_list(request):
+    changes = CveChange.objects.all().order_by("id").values()
+    limited = limit_results(changes)
+
+    return JsonResponse({
+        "count": len(limited),
+        "data": limited
+    })
+
+
+# ---------------------------------------------------------
+# 2. GET SINGLE RECORD
+# ---------------------------------------------------------
+def cvechange_detail(request, pk):
+    change = get_object_or_404(CveChange, pk=pk)
+    return JsonResponse({
+        "id": change.id,
+        "cveId": change.cveId,
+        "eventName": change.eventName,
+        "cveChangeId": change.cveChangeId,
+        "sourceIdentifier": change.sourceIdentifier,
+        "created": change.created,
+        "details": change.details,
+    })
+
+
+# ---------------------------------------------------------
+# 3. CREATE NEW RECORD
+# ---------------------------------------------------------
+@csrf_exempt
+def cvechange_create(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST method required"}, status=400)
+
+    data = json.loads(request.body)
+
+    change = CveChange.objects.create(
+        cveId=data.get("cveId"),
+        eventName=data.get("eventName"),
+        cveChangeId=data.get("cveChangeId"),
+        sourceIdentifier=data.get("sourceIdentifier"),
+        created=data.get("created"),
+        details=data.get("details", []),
+    )
+
+    return JsonResponse({"message": "Created successfully", "id": change.id})
+
+
+# ---------------------------------------------------------
+# 4. UPDATE RECORD
+# ---------------------------------------------------------
+@csrf_exempt
+def cvechange_update(request, pk):
+    if request.method != "PUT":
+        return JsonResponse({"error": "PUT method required"}, status=400)
+
+    data = json.loads(request.body)
+    change = get_object_or_404(CveChange, pk=pk)
+
+    change.cveId = data.get("cveId", change.cveId)
+    change.eventName = data.get("eventName", change.eventName)
+    change.cveChangeId = data.get("cveChangeId", change.cveChangeId)
+    change.sourceIdentifier = data.get("sourceIdentifier", change.sourceIdentifier)
+    change.created = data.get("created", change.created)
+    change.details = data.get("details", change.details)
+    change.save()
+
+    return JsonResponse({"message": "Updated successfully"})
+
+
+# ---------------------------------------------------------
+# 5. DELETE RECORD
+# ---------------------------------------------------------
+@csrf_exempt
+def cvechange_delete(request, pk):
+    if request.method != "DELETE":
+        return JsonResponse({"error": "DELETE method required"}, status=400)
+
+    change = get_object_or_404(CveChange, pk=pk)
+    change.delete()
+
+    return JsonResponse({"message": "Deleted successfully"})
+
+
+# ---------------------------------------------------------
+# 6. PAGINATED FETCH (FRONTEND CONTROLS LIMIT)
+# ---------------------------------------------------------
+def cvechange_paginated(request):
+    results_per_page = int(request.GET.get("resultsPerPage", MAX_LIMIT))
+    results_per_page = min(results_per_page, MAX_LIMIT)  # enforce limit
+
+    start_index = int(request.GET.get("startIndex", 0))
+
+    total = CveChange.objects.count()
+
+    items = list(
+        CveChange.objects.all()
+        .order_by("id")
+        .values()[start_index:start_index + results_per_page]
+    )
+
+    return JsonResponse({
+        "resultsPerPage": results_per_page,
+        "startIndex": start_index,
+        "totalResults": total,
+        "timestamp": datetime.utcnow().isoformat(),
+        "data": items,
+    })
+
+
+# ---------------------------------------------------------
+# 7. SEARCH RECORDS (LIMITED TO 5000)
+# ---------------------------------------------------------
+@csrf_exempt
+def cvechange_search(request):
+    print("Search API called", request.GET)
+
+    query = request.GET.get("q") or request.GET.get("query") or ""
+    query = query.strip()
+
+    if not query:
+        return JsonResponse({
+            "resultsPerPage": MAX_LIMIT,
+            "startIndex": 0,
+            "totalResults": 0,
+            "timestamp": datetime.utcnow().isoformat(),
+            "data": []
+        })
+
+    # Pagination from query params
+    results_per_page = int(request.GET.get("resultsPerPage", MAX_LIMIT))
+    results_per_page = min(results_per_page, MAX_LIMIT)
+    start_index = int(request.GET.get("startIndex", 0))
+
+    queryset = CveChange.objects.filter(
+        Q(cveId__icontains=query) |
+        Q(cveChangeId__icontains=query) |
+        Q(sourceIdentifier__icontains=query)
+    ).order_by("id")
+
+    total_found = queryset.count()
+
+    sliced_results = queryset[start_index:start_index + results_per_page]
+
+    results = [
+        {
+            "id": c.id,
+            "cveId": c.cveId,
+            "eventName": c.eventName,
+            "cveChangeId": c.cveChangeId,
+            "sourceIdentifier": c.sourceIdentifier,
+            "created": c.created,
+            "details": c.details,
+        }
+        for c in sliced_results
+    ]
+
+    return JsonResponse({
+        "resultsPerPage": results_per_page,
+        "startIndex": start_index,
+        "totalResults": total_found,
+        "timestamp": datetime.utcnow().isoformat(),
+        "data": results
+    })

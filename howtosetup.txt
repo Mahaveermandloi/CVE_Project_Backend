@@ -1,0 +1,74 @@
+python -m venv venv
+venv\Scripts\activate
+
+
+
+
+
+pip install django djangorestframework
+
+
+
+
+django-admin startproject core .
+
+
+NOW CREATE APPS YOU WANT - api / home / users 
+
+
+python manage.py startapp api
+
+
+python manage.py runserver
+
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'records',
+        'USER': 'root',
+        'PASSWORD': 'admin',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'raise_on_warnings': True,
+        },
+    }
+}
+
+
+
+
+
+project/
+│
+├── core/                   # Main project settings + URLs + WSGI/ASGI
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   ├── asgi.py
+│
+├── apps/                   # All Django apps inside a single folder (best practice)
+│   ├── users/
+│   ├── accounts/
+│   ├── api/
+│   ├── products/
+│   └── orders/
+│
+├── config/                 # Environment configs, constants
+│
+├── static/                 # CSS, JS, Images
+│
+├── media/                  # User-uploaded files
+│
+├── templates/              # Shared HTML templates (base.html, layouts)
+│
+├── requirements/           # Prod/dev reqs separate
+│   ├── base.txt
+│   ├── dev.txt
+│   └── prod.txt
+│
+└── manage.py
+
+
