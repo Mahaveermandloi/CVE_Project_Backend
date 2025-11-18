@@ -14,8 +14,6 @@ from .models import CveChange
 import openpyxl
 
 
-
-
 # ---------------------------------------------------------
 # GLOBAL LIMIT
 # ---------------------------------------------------------
@@ -279,80 +277,9 @@ def cvechange_filter(request):
 MAX_EXPORT_LIMIT = 5000  # Maximum records to export
 
 
-
 # ---------------------------------------------------------
 # 9. EXPORT FILTERED RECORDS TO EXCEL
 # ---------------------------------------------------------
-# @csrf_exempt
-# def cvechange_export(request):
-#     """
-#     Export filtered CVE changes to Excel.
-#     Query params:
-#       - event (multiple allowed) e.g. ?event=CVE%20Modified&event=Reanalysis
-#       - startDate (YYYY-MM-DD)
-#       - endDate   (YYYY-MM-DD)
-#     """
-
-#     MAX_EXPORT_LIMIT = 5000  # Maximum records to export
-
-#     # events filter
-#     events = request.GET.getlist("event")
-#     if not events:
-#         events_raw = request.GET.get("events", "")
-#         if events_raw:
-#             events = [e.strip() for e in events_raw.split(",") if e.strip()]
-
-#     # date range filter
-#     start_date = request.GET.get("startDate")
-#     end_date = request.GET.get("endDate")
-
-#     queryset = CveChange.objects.all()
-
-#     # Apply event filter
-#     if events:
-#         queryset = queryset.filter(eventName__in=events)
-
-#     # Apply date filters
-#     try:
-#         if start_date:
-#             queryset = queryset.filter(created__date__gte=start_date)
-#         if end_date:
-#             queryset = queryset.filter(created__date__lte=end_date)
-#     except Exception as e:
-#         print("Date filter parse error:", e)
-
-#     queryset = queryset.order_by("id")[:MAX_EXPORT_LIMIT]  # Limit export
-
-#     # Create Excel workbook
-#     wb = openpyxl.Workbook()
-#     ws = wb.active
-#     ws.title = "CVE Changes"
-
-#     # Header row
-#     headers = ["ID", "CVE ID", "Event Name", "CVE Change ID", "Source Identifier", "Created", "Details"]
-#     ws.append(headers)
-
-#     # Data rows
-#     for c in queryset:
-#         ws.append([
-#             c.id,
-#             c.cveId,
-#             c.eventName,
-#             c.cveChangeId,
-#             c.sourceIdentifier,
-#             c.created.strftime("%Y-%m-%d %H:%M:%S"),
-#             json.dumps(c.details),  # Convert JSON field to string
-#         ])
-
-#     # Prepare response
-#     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-#     filename = f"CVE_Changes_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
-#     response["Content-Disposition"] = f'attachment; filename="{filename}"'
-
-#     # Save workbook to response
-#     wb.save(response)
-#     return response
-
 
 
 @csrf_exempt
@@ -399,7 +326,8 @@ def cvechange_export(request):
     ws.title = "CVE Changes"
 
     # Header row
-    headers = ["ID", "CVE ID", "Event Name", "CVE Change ID", "Source Identifier", "Created", "Details"]
+    headers = ["ID", "CVE ID", "Event Name", "CVE Change ID",
+               "Source Identifier", "Created", "Details"]
     ws.append(headers)
 
     # Data rows
