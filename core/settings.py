@@ -26,9 +26,6 @@ SECRET_KEY = "django-insecure-r7h2#xnh0tiem8=9p^fvu&!p1$as&7p!z1-0ah(36^$jw*zhm-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -121,6 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+ALLOWED_HOSTS = ["cve-project-backend.onrender.com"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
