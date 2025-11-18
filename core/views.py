@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from .models import CveChange
+from django.db.models import Count
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -351,3 +352,48 @@ def cvechange_export(request):
 
     wb.save(response)
     return response
+
+
+#
+
+# ---------------------------------------------------------
+# 10. COUNT ALL EVENT OPTIONS
+# ---------------------------------------------------------
+
+
+EVENT_OPTIONS = [
+    "CVE Received",
+    "Initial Analysis",
+    "Reanalysis",
+    "CVE Modified",
+    "Modified Analysis",
+    "CVE Translated",
+    "Vendor Comment",
+    "CVE Source Update",
+    "CPE Deprecation Remap",
+    "CWE Remap",
+    "Reference Tag Update",
+    "CVE Rejected",
+    "CVE Unrejected",
+    "CVE CISA KEV Update",
+]
+
+def cvechange_event_counts(request):
+    """
+    Returns counts of CVE changes for each event in EVENT_OPTIONS.
+    Useful for a frontend pie chart.
+    """
+    # Aggregate counts for each eventName in EVENT_OPTIONS
+    queryset = CveChange.objects.filter(eventName__in=EVENT_OPTIONS)
+    counts = queryset.values('eventName').annotate(count=Count('id'))
+
+    # Convert to dict for easy frontend use
+    # Make sure all EVENT_OPTIONS are present even if count is 0
+    result = {event: 0 for event in EVENT_OPTIONS}
+    for item in counts:
+        result[item['eventName']] = item['count']
+
+    return JsonResponse({
+        "timestamp": datetime.utcnow().isoformat(),
+        "data": result
+    })
