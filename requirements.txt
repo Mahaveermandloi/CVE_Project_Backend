@@ -1,0 +1,10 @@
+asgiref==3.10.0
+Django==5.2.8
+django-cors-headers==4.9.0
+et_xmlfile==2.0.0
+mysql==0.0.3
+mysql-connector-python==9.5.0
+mysqlclient==2.2.7
+openpyxl==3.1.5
+sqlparse==0.5.3
+tzdata==2025.2
