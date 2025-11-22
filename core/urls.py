@@ -18,6 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from . import views
+from . import graphviews
 
 
 urlpatterns = [
@@ -29,8 +30,27 @@ urlpatterns = [
     path("api/cvechanges/paginated/", views.cvechange_paginated),
     path("api/cvechanges/search/", views.cvechange_search),
     path('api/cvechanges/filter/', views.cvechange_filter, name='cvechange_filter'),
-    path("api/cvechanges/export/", views.cvechange_export, name="cvechange_export"), 
-    path('api/cvechanges/event-counts/', views.cvechange_event_counts),
-    
+    path("api/cvechanges/export/", views.cvechange_export, name="cvechange_export"),
+    path("search/", views.search_page, name="search_page"),
+    path("api/cvechanges/suggestions/",
+         views.suggestions_api, name="cvechange_suggestions"),    path("api/event-options/", views.event_options_list, name="event_options_list"),
+    path("api/event-options/create/", views.event_options_create,
+         name="event_options_create"),
+    path("api/event-counts/", graphviews.api_event_counts, name="api_event_counts"),
+
+
+    path("api/cve-year-counts/", graphviews.api_cve_year_counts,
+         name="api_cve_year_counts"),
+
+    path("api/top-sources/", graphviews.api_top_sources, name="api_top_sources"),
+    path("api/analysis-status/", graphviews.api_analysis_status,
+         name="api_analysis_status"),
+    # path("api/cve-scatter/", graphviews.api_cve_scatter, name="api_cve_scatter"),
+
+# urls.py (add to urlpatterns)
+path("api/monthly-event-trends/", graphviews.api_monthly_event_trends, name="api_monthly_event_trends"),
 
 ]
+
+
+# add this line where you list graph endpoints

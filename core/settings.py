@@ -74,30 +74,33 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'mysql.connector.django',
-#         'NAME': 'records',
-#         'USER': 'root',
-#         'PASSWORD': 'admin',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'raise_on_warnings': True,
-#         },
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'records',          # Database you just created
-        'USER': 'admin',
-        'PASSWORD': 'mahaveermandloi', 
-        'HOST': 'database-1.c18qc06k02we.ap-south-1.rds.amazonaws.com',
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'records',
+        'USER': 'root',
+        'PASSWORD': 'admin',
+        'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'raise_on_warnings': True,
+        },
     }
 }
+
+ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ["cve-project-backend.onrender.com"]
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'records',          # Database you just created
+#         'USER': 'admin',
+#         'PASSWORD': 'mahaveermandloi', 
+#         'HOST': 'database-1.c18qc06k02we.ap-south-1.rds.amazonaws.com',
+#         'PORT': '3306',
+#     }
+# }
 
 
 # Password validation
@@ -118,7 +121,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-ALLOWED_HOSTS = ["cve-project-backend.onrender.com"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
